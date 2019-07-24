@@ -42,12 +42,12 @@ tool.onMouseMove = function(e) {
     console.log("sent");
     socket.send(strmsg);
 }
+var draw;
 var smallpath = new paper.Path();
 var urlParams = new URLSearchParams(window.location.search);
-var draw;
 console.log(urlParams);
-var stringb = "small";
-if (url.indexOf(stringb) != -1) {
+var stringsmall = "small";
+if (url.indexOf(stringsmall) != -1) {
     console.log("in small");
     draw = function(msg) {
         parsed = JSON.parse(msg.data);
