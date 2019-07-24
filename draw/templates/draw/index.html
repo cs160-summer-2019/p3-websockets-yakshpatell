@@ -1,36 +1,97 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>P4 Drawing</title>
-
     <link rel="stylesheet" type="text/css" href="{% static 'draw/vendor/bootstrap/css/bootstrap.min.css' %}">
     <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
-
     <style type="text/css">
     </style>
-
 </head>
 <body>
     <!-- You may change the dimensions of this canvas -->
-    <canvas id="myCanvas" width="750px" height="750px"></canvas>
+    <canvas id="myCanvas" width="500px" height="500px"></canvas>
 </body>
 <script>
-
-    // setting up the canvas and one paper tool
-    var canvas = document.getElementById('myCanvas');
-    paper.setup(canvas);
-    var tool = new paper.Tool();
-
-    // getting the URL (you may want to use for Exercise 3)
-    var url = window.location.href;
-
-    // var socket = new WebSocket(
-    //     'wss://<your url here>/ws/draw');
-
-
+//used https://beautifier.io to cleanup code style
+var canvas = document.getElementById('myCanvas');
+paper.setup(canvas);
+var usernumber = Math.random();
+var url = window.location.href;
+var dict = {};
+var tool = new paper.Tool();
+var usercolor = "#000000".replace(/0/g, function() {
+    return (~~(Math.random() * 16)).toString(16); //inverts and converts to int
+});
+console.log(url);
+var socket = new WebSocket(
+    'wss://p3-websockets-yakshpatell-patelyaksh2000727750.codeanyapp.com/ws/draw');
+path1 = new paper.Path();
+path2 = new paper.Path();
+tool.onMouseMove = function(e) {
+    var msg = {
+        x: e.point.x,
+        y: e.point.y,
+        color: usercolor,
+        user: usernumber
+    };
+    var strmsg = JSON.stringify(msg);
+    console.log(usercolor);
+    console.log("sent");
+    socket.send(strmsg);
+}
+var smallpath = new paper.Path();
+var urlParams = new URLSearchParams(window.location.search);
+var draw;
+console.log(urlParams);
+var stringb = "small";
+if (url.indexOf(stringb) != -1) {
+    console.log("in small");
+    draw = function(msg) {
+        parsed = JSON.parse(msg.data);
+        user = parsed.user;
+        if (usernumber == user) {
+            color = parsed.color;
+            smallpath.strokeColor = color;
+            smallpath.strokeWidth = 5;
+            x = parsed.x;
+            y = parsed.y;
+            smallpath.add(new paper.Point(x, y));
+        }
+    }
+} else {
+    draw = function(msg) {
+        parsed = JSON.parse(msg.data);
+        color = parsed.color;
+        user = parsed.user;
+        if (!(user in dict)) {
+            newpath = new paper.Path();
+            dict[user] = newpath;
+        }
+        console.log(color);
+        dict[user].strokeColor = color;
+        dict[user].strokeWidth = 5;
+        x = parsed.x;
+        y = parsed.y;
+        dict[user].add(new paper.Point(x, y));
+    }
+}
+socket.onmessage = draw;
+$(document).ready(() => {
+    window.addEventListener('deviceorientation', (event) => {
+        if (event.gamma > 5) {
+            usercolor = "#000000".replace(/0/g, function() {
+                return (~~(Math.random() * 16)).toString(16); //inverts and converts to int
+            });
+        }
+    });
+    window.addEventListener('devicemotion', (event) => {
+        if ((Math.abs(event.acceleration.x) > 10) || (Math.abs(event.acceleration.x) > 10) || (Math.abs(event.acceleration.y) > 10)) {
+            paper.project.clear();
+        }
+    });
+});
 </script>
 </html>
